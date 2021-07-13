@@ -87,6 +87,7 @@ def get_homophily(label, adj):
 
 
 def load_data(path, dataset):
+    #很多地方基于已有的数据格式，如训练集恰好是前140个，所以前面应该还有一些数据处理的过程
     """Load input data from directory.
     Parameters
     ----------
@@ -129,10 +130,6 @@ def load_data(path, dataset):
                     objects.append(pkl.load(f))
 
         x, y, tx, ty, allx, ally, graph = tuple(objects)
-        '''
-        y长140，ty长1000，ally长1708，三者之间有什么关系？
-        graph的大小就是2708，代表整个数据集是2708，这个140是什么？
-        '''
         test_idx_reorder = parse_index_f("{}/ind.{}.test.index".format(path, dataset))
         test_idx_range = np.sort(test_idx_reorder)   #测试node的序号
         #print(test_idx_reorder)
