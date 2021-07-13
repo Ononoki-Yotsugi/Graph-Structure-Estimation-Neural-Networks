@@ -42,7 +42,7 @@ class GCN(nn.Module):
         x1 = self.activation(self.conv1(feature, adj))
         x1 = F.dropout(x1, p=self.dropout, training=self.training)
         x2 = self.conv2(x1, adj)
-        return x1, F.log_softmax(x2, dim=1)
+        return x1, F.log_softmax(x2, dim=1)   #x1:(N,hidden_size)——中间层表示，x2:(N,num_class)——最终logits的log
 
 
 """
@@ -61,7 +61,7 @@ class GEN:
         self.device = device
         self.base_model = base_model.to(device)
 
-        self.iter = 0
+        self.iter = 0   #记录迭代数
         self.num_class = 0
         self.num_node = 0
 
@@ -106,15 +106,15 @@ class GEN:
         t_total = time.time()
         for iter in range(args.iter):
             start = time.time()
-            self.train_base_model(data, adj, iter)
+            self.train_base_model(data, adj, iter)   #GCN参数的更新
 
             estimator.reset_obs()
             estimator.update_obs(self.knn(data.x))
             estimator.update_obs(self.knn(self.hidden_output))
             estimator.update_obs(self.knn(self.output))
             
-            self.iter += 1
-            alpha, beta, O, Q, iterations = estimator.EM(self.output.max(1)[1].detach().cpu().numpy(), args.tolerance)
+            self.iter += 1   #这个量没有任何用处
+            alpha, beta, O, Q, iterations = estimator.EM(self.output.max(1)[1].detach().cpu().numpy(), args.tolerance)   #为什么要输入这个?
             adj = prob_to_adj(Q, args.threshold).to(self.device)
 
         print("***********************************************************************************************")
@@ -129,13 +129,16 @@ class GEN:
         # f.close()
 
     def knn(self, feature):
+        #done
         adj = np.zeros((self.num_node, self.num_node), dtype=np.int64)
         dist = cos(feature.detach().cpu().numpy())
         col = np.argpartition(dist, -(self.args.k + 1), axis=1)[:,-(self.args.k + 1):].flatten()
         adj[np.arange(self.num_node).repeat(self.args.k + 1), col] = 1
+        #print(adj.shape)
         return adj
 
     def train_base_model(self, data, adj, iter):
+        #done
         best_acc_val = 0
         optimizer = optim.Adam(self.base_model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
 
@@ -217,10 +220,13 @@ class EstimateAdj():
         self.iterations = 0
 
         self.homophily = data.homophily
+        #下面看不懂是在做什么
         if self.homophily > 0.5:
+            #大于0.5就用原邻接矩阵初始化E
             self.N = 1
-            self.E = data.adj.to_dense().cpu().numpy()
+            self.E = data.adj.to_dense().cpu().numpy()   #E:(num_node,num_node)
         else:
+            #小于等于0.5就用0初始化E
             self.N = 0
             self.E = np.zeros((self.num_node, self.num_node), dtype=np.int64)
 
@@ -233,15 +239,18 @@ class EstimateAdj():
             self.E = np.zeros((self.num_node, self.num_node), dtype=np.int64)
 
     def update_obs(self, output):
-        a = output.repeat(self.num_node).reshape(self.num_node, -1)
-        self.E += (a==a.T)
+        #不是很能理解它在干什么，直接加不就行了？
+        #a = output.repeat(self.num_node).reshape(self.num_node, -1)
+        #self.E += (a==a.T)
+        self.E+=output   #这是我改的
         self.N += 1
 
     def revise_pred(self):
         for j in range(len(self.idx_train)):
-            self.output[self.idx_train[j]] = self.label[self.idx_train[j]]
+            self.output[self.idx_train[j]] = self.label[self.idx_train[j]]   #对于训练node，采用gt，对于无标签node采用预测的标签
 
     def E_step(self, Q):
+        #根据Q更新alpha,beta,O
         """Run the Expectation(E) step of the EM algorithm.
         Parameters
         ----------
@@ -291,6 +300,7 @@ class EstimateAdj():
         return (alpha, beta, O)
 
     def M_step(self, alpha, beta, O):
+        #根据O,alpha,beta更新Q
         """Run the Maximization(M) step of the EM algorithm.
         """
         O += O.T - np.diag(O.diagonal())
@@ -339,6 +349,7 @@ class EstimateAdj():
             alpha, beta, O = self.E_step(Q)
             Q = self.M_step(alpha, beta, O)
             self.iterations += 1
+            print(self.iterations,alpha,beta)
 
         if self.homophily > 0.5:
             Q += self.adj

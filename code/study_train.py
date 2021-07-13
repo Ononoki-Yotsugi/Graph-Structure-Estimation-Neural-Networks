@@ -39,7 +39,7 @@ np.random.seed(args.seed)
 data = load_data("../data", args.dataset).to(device)
 
 base_model_args = {"num_feature": data.num_feature, "num_class":data.num_class,
-                "hidden_size": args.hidden, "dropout":args.dropout, "activation": args.activation}
+                   "hidden_size": args.hidden, "dropout":args.dropout, "activation": args.activation}
 if args.base == 'gcn':
     base_model = GCN(**base_model_args)
 

@@ -156,8 +156,9 @@ def load_data(path, dataset):
         #print(feature.shape)
 
         adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph)).tolil()
-        adj = sparse_mx_to_sparse_tensor(adj)
         #print(adj)
+        adj = sparse_mx_to_sparse_tensor(adj)
+
 
         label = np.vstack((ally, ty))
         label[test_idx_reorder,:] = label[test_idx_range,:]
@@ -258,6 +259,7 @@ def load_data(path, dataset):
     mask_train = get_mask(idx_train, label.size(0))
     mask_val = get_mask(idx_val, label.size(0))
     mask_test = get_mask(idx_test, label.size(0))
+    #print(adj.to_dense().cpu().numpy())
     return DataSet(x=feature, y=label, adj=adj, idx_train=idx_train, idx_val=idx_val, idx_test=idx_test,
                    mask_train=mask_train, mask_val=mask_val, mask_test=mask_test, homophily=homophily)
 

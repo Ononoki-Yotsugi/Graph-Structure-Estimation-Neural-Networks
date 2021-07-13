@@ -38,6 +38,7 @@ def sparse_mx_to_sparse_tensor(sparse_mx):
 
 
 def parse_index_f(path):
+    #done
     """Parse the index file.
     Parameters
     ----------
@@ -113,6 +114,7 @@ def load_data(path, dataset):
     """
     print("Loading {} dataset...".format(dataset))
     if dataset in ['cora', 'citeseer', 'pubmed']:
+        #如果是这三个数据集
         names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
         objects = []
         for i in range(len(names)):
